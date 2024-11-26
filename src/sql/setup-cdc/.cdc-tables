@@ -1,0 +1,5 @@
+dbo.Products
+dbo.Reviews
+dbo.Tags
+dbo.ProductTags
+dbo.ReviewTags

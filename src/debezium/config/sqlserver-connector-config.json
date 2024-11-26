@@ -1,0 +1,29 @@
+{
+  "name": "#{EVENTHUBNAMESPACE_HUB_NAME}#",
+  "config": {
+    "snapshot.mode": "schema_only",
+    "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+    "database.hostname": "#{AZURE_SQL_SERVER_NAME}#.database.windows.net",
+    "database.port": "1433",
+    "database.user": "#{AZURE_SQL_DATABASE_USER}#",
+    "database.password": "#{AZURE_SQL_DATABASE_PASSWORD}#",
+    "database.names": "#{AZURE_SQL_DATABASE_NAME}#",
+    "driver.encrypt": "false",
+    "driver.trustServerCertificate": "true",
+    "schema.history.internal.kafka.bootstrap.servers": "#{EVENTHUBNAMESPACE_NAME}#.servicebus.windows.net:9093",
+    "schema.history.internal.kafka.topic": "#{EVENTHUBNAMESPACE_HUB_NAME}#",
+    "schema.history.internal.consumer.security.protocol": "SASL_SSL",
+    "schema.history.internal.consumer.sasl.mechanism": "PLAIN",
+    "schema.history.internal.consumer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"#{EVENTHUBNAMESPACE_CONNECTIONSTRING}#\";",
+    "schema.history.internal.producer.security.protocol": "SASL_SSL",
+    "schema.history.internal.producer.sasl.mechanism": "PLAIN",
+    "schema.history.internal.producer.sasl.jaas.config": "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"#{EVENTHUBNAMESPACE_CONNECTIONSTRING}#\";",
+    "table.include.list": "#{CDC_DATABASE_TABLES}#",
+    "tombstones.on.delete": "false",
+    "topic.prefix": "SQLAzure",
+    "transforms": "Reroute",
+    "transforms.Reroute.type": "io.debezium.transforms.ByLogicalTableRouter",
+    "transforms.Reroute.topic.regex": "(.*)",
+    "transforms.Reroute.topic.replacement": "#{EVENTHUBNAMESPACE_HUB_NAME}#"
+  }
+}

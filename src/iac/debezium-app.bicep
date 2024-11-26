@@ -17,8 +17,8 @@ module m_ca_debezium 'modules/container-app/main.bicep' = {
     name: name
     location: location
     containerAppEnvironmentName: containerAppEnvironmentName
-    containerImageName: 'debezium/connect'
-    containerImageTag: '2.7'
+    containerImageName: 'docker.io/debezium/connect'
+    containerImageTag: '2.7.3.Final'
     containerRegistryName: containerRegistryName
     environmentName: environmentName
     replicaSizeCpu: '1'
