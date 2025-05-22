@@ -65,6 +65,41 @@ function Add-MissingSqlFirewallRules {
    }
 }
 
+
+function Build-PublishDockerfile {
+   param (
+      [Parameter(Mandatory=$true)]
+      [string]$dockerPath,
+      [Parameter(Mandatory=$true)]
+      [string]$dockerfilePath,
+      [Parameter(Mandatory=$true)]
+      [object]$deployOutput,
+      [Parameter(Mandatory=$true)]
+      [string]$imageAndTagName
+   )
+   $tag = "$($deployOutput.outputs.acrLoginServer.value)/images/$imageAndTagName"
+   docker build $dockerPath --file $dockerfilePath --tag $tag
+   az acr login --name $deployOutput.outputs.acrName.value
+   docker push $tag
+   return $tag
+}
+
+function Update-AppSettings {
+   param (
+      [Parameter(Mandatory=$true)]
+      [object]$deployOutput
+   )
+   $adminKey = az search admin-key show --resource-group $deployOutput.outputs.resourceGroupName.value --service-name $deployOutput.outputs.searchIndexName.value  `
+      | ConvertFrom-Json `
+      | Select-Object -ExpandProperty primaryKey
+   $appSettings = Get-Content '.\azure-function\ChangeFeed.Processor\ChangeFeed.Processor\appsettings.prod.json' -Raw
+   $appSettings = $appSettings `
+      -replace '#{SearchIndexUri}#', $deployOutput.outputs.searchIndexUri.value `
+      -replace '#{SearchIndexKey}#', $adminKey
+   Set-Content -Path '.\azure-function\ChangeFeed.Processor\ChangeFeed.Processor\appsettings.json' -Value $appSettings
+   Write-Host "Updated appsettings.json with deployment values."
+}
+
 function Deploy-SqlFirewallRules {
    param (
       [Parameter(Mandatory=$true)]
@@ -180,6 +215,10 @@ Ensure-SqlServerModule
 $deployOutput = az stack sub create --name ChangeCapture --location swedencentral --template-file ".\iac\main.bicep" --parameters ".\iac\main.bicepparam" sqlServerPassword=$sqlServerDbPassword --dm none --aou detachAll --yes | ConvertFrom-Json
 # Post Deployment setup
 if($null -ne $deployOutput){
+   Update-AppSettings -deployOutput $deployOutput
+   $tag = Build-PublishDockerfile -dockerPath ((Resolve-Path '.\azure-function\ChangeFeed.Processor').Path)  -dockerfilePath ((Resolve-Path '.\azure-function\ChangeFeed.Processor\ChangeFeed.Processor\Dockerfile').Path) -deployOutput $deployOutput -imageAndTagName "changefeedprocessor:latest"
+   az stack sub create --name ChangeCapture --location swedencentral --template-file ".\iac\main.bicep" --parameters ".\iac\main.app.bicepparam" sqlServerPassword=$sqlServerDbPassword --dm none --aou detachAll --yes | ConvertFrom-Json
+
    Deploy-SqlFirewallRules -deployOutput $deployOutput
    Deploy-Database -deployOutput $deployOutput -sqlServerPassword $sqlServerDbPassword
    Deploy-CDC -deployOutput $deployOutput -sqlServerPassword $sqlServerDbPassword -debeziumUser $sqlServerDebeziumUser -debeziumPassword $sqlServerDebeziumPassword

@@ -38,3 +38,7 @@ resource search 'Microsoft.Search/searchServices@2020-08-01' = {
     partitionCount: partitionCount
   }
 }
+
+
+output uri string = 'https://${search.name}.search.windows.net'
+output name string = search.name

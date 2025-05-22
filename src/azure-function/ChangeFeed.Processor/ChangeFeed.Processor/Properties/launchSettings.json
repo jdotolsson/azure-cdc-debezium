@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "ChangeFeed.Processor": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7211"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "containerRunArguments": "--init",
+      "httpPort": 33076,
+      "useSSL": false
+    }
+  }
+}
